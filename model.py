@@ -25,16 +25,16 @@ class TranE(nn.Module):
         :param neg_head: [batch_size]
         :param neg_relation: [batch_size]
         :param neg_tail: [batch_size]
-        :return: positive: [batch_size, embed_dim]
-                 negative: [batch_size, embed_dim]
+        :return: pos_head_and_relation: [batch_size, embed_dim]
+                 pos_tail: [batch_size, embed_dim]
+                 neg_head_and_relation: [batch_size, embed_dim]
+                 neg_tail: [batch_size, embed_dim]
         """
-        pos_h, pos_t = self.entity_embedding(pos_head), self.entity_embedding(pos_tail)
-        pos_r = self.relation_embedding(pos_relation)
-        neg_h, neg_t = self.entity_embedding(neg_tail), self.entity_embedding(neg_tail)
-        neg_r = self.relation_embedding(neg_relation)
-        positive = pos_h + pos_r - pos_t
-        negative = neg_h + neg_r - neg_t
-        return positive, negative
+        pos_head_and_relation = self.entity_embedding(pos_head) + self.relation_embedding(pos_relation)
+        pos_tail = self.entity_embedding(pos_tail)
+        neg_head_and_relation = self.entity_embedding(neg_head) + self.relation_embedding(neg_relation)
+        neg_tail = self.entity_embedding(neg_tail)
+        return pos_head_and_relation, pos_tail, neg_head_and_relation, neg_tail
 
 
 if __name__ == '__main__':

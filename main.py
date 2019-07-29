@@ -10,6 +10,7 @@ num_epochs = 20
 lr = 1e-2
 momentum = 0
 gamma = 1
+d_norm = 2
 
 
 def main():
@@ -31,7 +32,12 @@ def main():
             neg = torch.transpose(neg, 0, 1)
             # neg_head, neg_relation, neg_tail: [batch_size]
             neg_head, neg_relation, neg_tail = neg[0], neg[1], neg[2]
-            transe(pos_head, pos_relation, pos_tail, neg_head, neg_relation, neg_tail)
+            pos_head_and_relation, pos_tail, neg_head_and_relation, neg_tail = transe(pos_head, pos_relation, pos_tail,
+                                                                                      neg_head, neg_relation, neg_tail)
+            loss = torch.max(torch.Tensor([0]).to(device),
+                             gamma + torch.dist(pos_head_and_relation, pos_tail) - torch.dist(neg_head_and_relation,
+                                                                                              neg_tail))
+            print(loss)
             break
         break
 

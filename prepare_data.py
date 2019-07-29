@@ -61,15 +61,15 @@ class Triple(Dataset):
                 neg, i = neg_candidates[i], i + 1
                 if random.randint(0, 1) == 0:
                     # replace head
-                    triple[0] = neg
+                    if neg not in self.related_dic[triple[2]]:
+                        neg_data.append([neg, triple[1], triple[2]])
+                        break
                 else:
                     # replace tail
-                    triple[2] = neg
-                # if triple not in self.pos_data:
-                if triple[2] not in self.related_dic[triple[0]]:
-                    # negative sample
-                    neg_data.append(triple)
-                    break
+                    if neg not in self.related_dic[triple[0]]:
+                        neg_data.append([triple[0], triple[1], neg])
+                        break
+
         return np.array(neg_data)
 
     def get_related_entity(self):
@@ -93,6 +93,6 @@ class Triple(Dataset):
 if __name__ == '__main__':
     dataset = Triple()
     loader = DataLoader(dataset, batch_size=32, shuffle=True)
-    for batch_idx, (pos, neg) in enumerate(loader):
-        print(pos, neg)
-        break
+    # for batch_idx, (pos, neg) in enumerate(loader):
+    #     # print(pos, neg)
+    #     break
