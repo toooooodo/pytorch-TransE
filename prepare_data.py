@@ -23,7 +23,7 @@ class Triple(Dataset):
         return self.triple_num
 
     def __getitem__(self, item):
-        pass
+        return [self.pos_data[item], self.neg_data[item]]
 
     def load_texd(self):
         raw_data = pd.read_csv('./fb15k/freebase_mtr100_mte100-train.txt', sep='\t', header=None,
@@ -92,3 +92,7 @@ class Triple(Dataset):
 
 if __name__ == '__main__':
     dataset = Triple()
+    loader = DataLoader(dataset, batch_size=32, shuffle=True)
+    for batch_idx, (pos, neg) in enumerate(loader):
+        print(pos, neg)
+        break
