@@ -7,10 +7,10 @@ from prepare_data import Triple
 device = torch.device('cuda')
 embed_dim = 50
 num_epochs = 20
-lr = 1e-4
+lr = 1e-2
 momentum = 0
 gamma = 1
-d_norm = 1
+d_norm = 2
 
 
 def main():
@@ -21,8 +21,7 @@ def main():
     optimizer = optim.SGD(transe.parameters(), lr=lr, momentum=momentum)
     for epoch in range(num_epochs):
         # e <= e / ||e||
-        entity_norm = torch.norm(transe.entity_embedding.weight.data, dim=1).view(-1, 1)
-        _, entity_norm = torch.broadcast_tensors(transe.entity_embedding.weight.data, entity_norm)
+        entity_norm = torch.norm(transe.entity_embedding.weight.data, dim=1, keepdim=True)
         transe.entity_embedding.weight.data = transe.entity_embedding.weight.data / entity_norm
         total_loss = 0
         for batch_idx, (pos, neg) in enumerate(loader):
@@ -35,6 +34,7 @@ def main():
             # neg_head, neg_relation, neg_tail: [batch_size]
             neg_head, neg_relation, neg_tail = neg[0], neg[1], neg[2]
             loss = transe(pos_head, pos_relation, pos_tail, neg_head, neg_relation, neg_tail)
+
             total_loss += loss.item()
             optimizer.zero_grad()
             loss.backward()

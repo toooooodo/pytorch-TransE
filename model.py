@@ -22,12 +22,12 @@ class TranE(nn.Module):
         self.device = device
         self.gamma = torch.FloatTensor([gamma]).to(self.device)
         self.entity_embedding = nn.Embedding.from_pretrained(
-            torch.empty(entity_num, self.dim).uniform_(-6 / math.sqrt(self.dim), 6 / math.sqrt(self.dim)))
+            torch.empty(entity_num, self.dim).uniform_(-6 / math.sqrt(self.dim), 6 / math.sqrt(self.dim)), freeze=False)
         self.relation_embedding = nn.Embedding.from_pretrained(
-            torch.empty(relation_num, self.dim).uniform_(-6 / math.sqrt(self.dim), 6 / math.sqrt(self.dim)))
+            torch.empty(relation_num, self.dim).uniform_(-6 / math.sqrt(self.dim), 6 / math.sqrt(self.dim)),
+            freeze=False)
         # l <= l / ||l||
-        relation_norm = torch.norm(self.relation_embedding.weight.data, dim=1).view(-1, 1)
-        _, relation_norm = torch.broadcast_tensors(self.relation_embedding.weight.data, relation_norm)
+        relation_norm = torch.norm(self.relation_embedding.weight.data, dim=1, keepdim=True)
         self.relation_embedding.weight.data = self.relation_embedding.weight.data / relation_norm
 
     def forward(self, pos_head, pos_relation, pos_tail, neg_head, neg_relation, neg_tail):
