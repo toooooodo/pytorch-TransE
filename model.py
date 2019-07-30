@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import torch.nn.functional as F
-from prepare_data import Triple
+from prepare_data import TrainSet, TestSet
 import math
 
 
@@ -57,10 +57,22 @@ class TranE(nn.Module):
                                                                                             dim=1)
         return torch.sum(F.relu(distance_diff))
 
+    def tail_predict(self, head, relation, tail, k=10):
+        # h_and_r: [embed_size]=> [1, embed_size]
+        h_and_r = self.entity_embedding(head.to(self.device)) + self.relation_embedding(relation.to(self.device)).view(
+            1, -1)
+        cos = F.cosine_similarity(h_and_r, self.entity_embedding.weight.data)
+        values, indices = torch.topk(cos, k)
+        return tail.item() in indices.cpu().numpy()
+
 
 if __name__ == '__main__':
-    dataset = Triple()
-    loader = DataLoader(dataset, batch_size=32, shuffle=True)
-    transe = TranE(dataset.entity_num, dataset.relation_num)
-    for batch_idx, (pos, neg) in enumerate(loader):
+    train_data_set = TrainSet()
+    test_data_set = TestSet()
+    test_data_set.convert_word_to_index(train_data_set.entity_to_index, train_data_set.relation_to_index,
+                                        test_data_set.raw_data)
+    train_loader = DataLoader(train_data_set, batch_size=32, shuffle=True)
+    test_loader = DataLoader(test_data_set, batch_size=32, shuffle=True)
+    for batch_idx, data in enumerate(test_loader):
+        print(data.shape)
         break

@@ -5,15 +5,14 @@ from torch.utils.data import Dataset, DataLoader
 import random
 
 
-class Triple(Dataset):
+class TrainSet(Dataset):
     def __init__(self):
-        super(Triple, self).__init__()
+        super(TrainSet, self).__init__()
         # self.raw_data, self.entity_dic, self.relation_dic = self.load_texd()
-        self.raw_data, self.entity_to_index, self.relation_to_index = self.load_texd()
-
+        self.raw_data, self.entity_to_index, self.relation_to_index = self.load_text()
         self.entity_num, self.relation_num = len(self.entity_to_index), len(self.relation_to_index)
         self.triple_num = self.raw_data.shape[0]
-        print(f'{self.entity_num} entities, {self.relation_num} relations, {self.triple_num} triples.')
+        print(f'Train set: {self.entity_num} entities, {self.relation_num} relations, {self.triple_num} triplets.')
         self.pos_data = self.convert_word_to_index(self.raw_data)
         self.related_dic = self.get_related_entity()
         # print(self.related_dic[0], self.related_dic[479])
@@ -25,7 +24,7 @@ class Triple(Dataset):
     def __getitem__(self, item):
         return [self.pos_data[item], self.neg_data[item]]
 
-    def load_texd(self):
+    def load_text(self):
         raw_data = pd.read_csv('./fb15k/freebase_mtr100_mte100-train.txt', sep='\t', header=None,
                                names=['head', 'relation', 'tail'],
                                keep_default_na=False, encoding='utf-8')
@@ -90,9 +89,41 @@ class Triple(Dataset):
         return related_dic
 
 
+class TestSet(Dataset):
+    def __init__(self):
+        super(TestSet, self).__init__()
+        self.raw_data = self.load_text()
+        self.data = self.raw_data
+        print(f"Test set: {self.raw_data.shape[0]} triplets")
+
+    def __getitem__(self, item):
+        return self.data[item]
+
+    def __len__(self):
+        return self.data.shape[0]
+
+    def load_text(self):
+        raw_data = pd.read_csv('./fb15k/freebase_mtr100_mte100-test.txt', sep='\t', header=None,
+                               names=['head', 'relation', 'tail'],
+                               keep_default_na=False, encoding='utf-8')
+        raw_data = raw_data.applymap(lambda x: x.strip())
+        return raw_data.values
+
+    def convert_word_to_index(self, entity_to_index, relation_to_index, data):
+        index_list = np.array(
+            [[entity_to_index[triple[0]], relation_to_index[triple[1]], entity_to_index[triple[2]]] for triple in data])
+        self.data = index_list
+
+
 if __name__ == '__main__':
-    dataset = Triple()
-    loader = DataLoader(dataset, batch_size=32, shuffle=True)
+    train_data_set = TrainSet()
+    test_data_set = TestSet()
+    test_data_set.convert_word_to_index(train_data_set.entity_to_index, train_data_set.relation_to_index,
+                                                    test_data_set.raw_data)
+    train_loader = DataLoader(train_data_set, batch_size=32, shuffle=True)
+    test_loader = DataLoader(test_data_set, batch_size=32, shuffle=True)
+    for batch_idx, data in enumerate(train_loader):
+        break
     # for batch_idx, (pos, neg) in enumerate(loader):
     #     # print(pos, neg)
     #     break
