@@ -21,6 +21,8 @@ class TranE(nn.Module):
         self.d_norm = d_norm
         self.device = device
         self.gamma = torch.FloatTensor([gamma]).to(self.device)
+        self.entity_num = entity_num
+        self.relation_num = relation_num
         self.entity_embedding = nn.Embedding.from_pretrained(
             torch.empty(entity_num, self.dim).uniform_(-6 / math.sqrt(self.dim), 6 / math.sqrt(self.dim)), freeze=False)
         self.relation_embedding = nn.Embedding.from_pretrained(
@@ -58,12 +60,26 @@ class TranE(nn.Module):
         return torch.sum(F.relu(distance_diff))
 
     def tail_predict(self, head, relation, tail, k=10):
-        # h_and_r: [embed_size]=> [1, embed_size]
-        h_and_r = self.entity_embedding(head.to(self.device)) + self.relation_embedding(relation.to(self.device)).view(
-            1, -1)
-        cos = F.cosine_similarity(h_and_r, self.entity_embedding.weight.data)
-        values, indices = torch.topk(cos, k)
-        return tail.item() in indices.cpu().numpy()
+        """
+        to do tail prediction hits@k
+        :param head: [batch_size]
+        :param relation: [batch_size]
+        :param tail: [batch_size]
+        :param k: hits@k
+        :return:
+        """
+        # head: [batch_size]
+        # h_and_r: [batch_size, embed_size] => [batch_size, 1, embed_size] => [batch_size, N, embed_size]
+        h_and_r = self.entity_embedding(head) + self.relation_embedding(relation)
+        h_and_r = torch.unsqueeze(h_and_r, dim=1)
+        h_and_r = h_and_r.expand(h_and_r.shape[0], self.entity_num, self.dim)
+        # embed_tail: [batch_size, N, embed_size]
+        embed_tail = self.entity_embedding.weight.data.expand(h_and_r.shape[0], self.entity_num, self.dim)
+        # indices: [batch_size, k]
+        values, indices = torch.topk(torch.norm(h_and_r - embed_tail, dim=2), k, dim=1, largest=False)
+        # tail: [batch_size] => [batch_size, 1]
+        tail = tail.view(-1, 1)
+        return torch.sum(torch.eq(indices, tail)).item()
 
 
 if __name__ == '__main__':
